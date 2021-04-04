@@ -137,7 +137,7 @@ def mother_list(df:pd.DataFrame, id:str, result = None) -> list:
     if pd.isnull(father_id):
         return result[::-1]
     else:
-        return mother_list(father_id, result)
+        return mother_list(df, father_id, result)
 
 
 def father_list(df:pd.DataFrame, id:str, result = None) -> list:
@@ -155,7 +155,7 @@ def father_list(df:pd.DataFrame, id:str, result = None) -> list:
     if pd.isnull(father_id):
         return result[::-1]
     else:
-        return father_list(father_id, result)
+        return father_list(df, father_id, result)
 
 
 def namestr(df:pd.DataFrame, id_:str) -> str:
