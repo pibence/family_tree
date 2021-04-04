@@ -3,6 +3,7 @@
 @author: Bence Pipis, 2021
 
 This repo contains my project that aims to enable users to visualize their family tree if their ancestors are in the database. The database contains people who were born in and near Tótkomlós, Hungary in the last three centuries, meaning roughly 70k individual. 
+
 The app runs in command line. It can be started by clicking on the *run_family_tree* bat file or on the *Family_Tree* shortcut. Keep in mind that tha bat file works only if file is in the same folder as the .py file, while the shortcut can be copied and placed anywhere. For those with no python environment on the computer the *tree.exe* can be used from the working directory. Shortcut can be created if needed, although it is not advised to use exe when python environment is available, since the launch time is longer for exe.
 
 ## The structure of the project
