@@ -3,7 +3,7 @@
 @author: Bence Pipis, 2021
 
 This repo contains my project that aims to enable users to visualize their family tree if their ancestors are in the database. The database contains people who were born in and near Tótkomlós, Hungary in the last three centuries, meaning roughly 70k individual. 
-The app runs in Microsoft PowerShell after unblocking the .ps1 file and clicking on it or simply going to the directory in PowerShell where tree.py is located and execute *python tree.py* command. The usage from there is straightforward.
+The app runs in command line. It can be started by clicking on the run_family_tree bat file or on the Family_Tree shortcut. Keep in mind that tha bat file works only if file is in the same folder as the .py file, while the shortcut can be copied and placed anywhere.
 
 ## The structure of the project
 1. All data were available in individual html files for each person so as a first step necessary information was parsed from them using BeautifulSoup. Function for parsing can be found in datacollection.py file. This function has been executed in data_collection.ipynb where data cleaning was also done. The output is the *final_cleaned.csv* that is used in the next step.
