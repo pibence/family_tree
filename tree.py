@@ -6,7 +6,8 @@ from tabulate import tabulate
 import os
 
 # Reading csv containing data
-df = pd.read_csv('final_cleaned.csv', sep = ';')
+df = pd.read_csv('final_cleaned.csv', sep = ';', dtype = "string")
+
 
 # Creating new dataframe for marriages to reduce duplication
 
@@ -28,7 +29,7 @@ df = df[['id', 'first_name_1', 'first_name_2', 'last_name', 'birth_date', 'birth
 
 
 
-def lookup(firstname:str, lastname:str):
+def lookup(df:pd.DataFrame, firstname:str, lastname:str) -> pd.DataFrame:
     """This function returns a dataframe containing the people called 
     as the given name. It also given information about the parents' name
     and birth date and id. The aim of this function is to help identify
@@ -95,7 +96,7 @@ def lookup(firstname:str, lastname:str):
         return people[["id", "first_name_1", "first_name_2", "last_name", "birth_date", "father_name", "mother_name"]]
 
 
-def lookup_earliest(id:str):
+def lookup_earliest(df:pd.DataFrame, id:str) -> str:
     """This function returns the name and birth year of the earliest ancestor"""
 
     if len(df[df["id"] == id]) == 0:
@@ -106,20 +107,20 @@ def lookup_earliest(id:str):
         if pd.isnull(father_id):
             return f"The eldest ancestor is: {df[df['id'] == id].iloc[0,1]} {df[df['id'] == id].iloc[0,3]}. He/She was born in {df[df['id'] == id].iloc[0, 4]}." 
         else:
-            return lookup_earliest(father_id)    
+            return lookup_earliest(df, father_id)    
 
 
-def earliest_id(id:str) -> str:
+def earliest_id(df:pd.DataFrame, id:str) -> str:
     "This function returns the id of the earliest ancestor."
     father_id = df[df["id"] == id].iloc[0,8]
     
     if pd.isnull(father_id):
         return df[df["id"] == id]["id"].tolist()[0]
     else:
-        return earliest_id(father_id)
+        return earliest_id(df, father_id)
 
 
-def mother_list(id:str, result = None) -> list:
+def mother_list(df:pd.DataFrame, id:str, result = None) -> list:
     """This function returns the list of mothers' id who are in 
     the selected person's family tree. The goal of this function 
     is to select the wives from every father's partners who belong
@@ -139,7 +140,7 @@ def mother_list(id:str, result = None) -> list:
         return mother_list(father_id, result)
 
 
-def father_list(id:str, result = None) -> list:
+def father_list(df:pd.DataFrame, id:str, result = None) -> list:
     """This function returns the list of fathers' id who are in 
     the selected person's family tree. The logic is the same as
     in the earliest_id function."""
@@ -157,7 +158,7 @@ def father_list(id:str, result = None) -> list:
         return father_list(father_id, result)
 
 
-def namestr(id_:str) -> str:
+def namestr(df:pd.DataFrame, id_:str) -> str:
     """This function creates a string containing the name of the person.
     It selects the name attributes of a given id and pastes together in 
     firstname1, firstname2 (if exists), last name order."""
@@ -174,11 +175,11 @@ def namestr(id_:str) -> str:
     return st
 
 
-def wife_id(husband_id:str, orig_id:str)->str:
+def wife_id(df:pd.DataFrame, husband_id:str, orig_id:str) -> str:
     "This function returns the wife id to a husband id."
     #orig_id: the id of the person whose tree is being built.
     
-    mothers = mother_list(orig_id)
+    mothers = mother_list(df, orig_id)
 
     wives = marriages[marriages["husband_id"] == husband_id]
     if len(wives[wives["wife_id"].isin(mothers)]) == 0:
@@ -187,7 +188,7 @@ def wife_id(husband_id:str, orig_id:str)->str:
         return wives[wives["wife_id"].isin(mothers)]["wife_id"].tolist()[0]
 
 
-def birthdate(id:str)->str:
+def birthdate(df:pd.DataFrame, id:str)->str:
     """This function returns the date of birth of a person by id.
     If there is no info, it returns an empthy string."""
 
@@ -199,7 +200,7 @@ def birthdate(id:str)->str:
         return bd
 
 
-def deathdate(id:str)->str:
+def deathdate(df:pd.DataFrame, id:str) -> str:
     """This function returns the date of death of a person by id.
     If there is no info, it returns an empthy string."""
     
@@ -211,7 +212,7 @@ def deathdate(id:str)->str:
         return dd 
 
 
-def nodecolor(act_id:str, orig_id:str)->str:
+def nodecolor(df:pd.DataFrame, act_id:str, orig_id:str) -> str:
     """This function returns a color based on the person's details.
     Pink, if female, blue, if male, and orange if the person is the same
     whose tree is being built for better visualization."""
@@ -224,20 +225,20 @@ def nodecolor(act_id:str, orig_id:str)->str:
         return 'pink'
 
 
-def tree_create(id:str):
+def tree_create(df:pd.DataFrame, id:str):
     """"This function takes the id of a person and returns the whole family tree on 
     father's side. The shown attributes of a person in the tree are the full name, birth
     date and date of death. The men's boxes are blue while the female's are pink."""
     
     # Creating list of fathers, mothers ids
-    fathers = father_list(id)
+    fathers = father_list(df, id)
     
     # ID of the earliest ancestor
-    eid = earliest_id(id)
+    eid = earliest_id(df, id)
 
     # Initializing network object and adding earliest ancestor
     net = Network(layout = 'hieararchical', height = 1000, width = 2000)
-    net.add_node(eid, label = f"{namestr(eid)}\n{birthdate(eid)} -\n{deathdate(eid)}" , level = 1, shape ='box', color = "lightblue")
+    net.add_node(eid, label = f"{namestr(df, eid)}\n{birthdate(df,eid)} -\n{deathdate(df,eid)}" , level = 1, shape ='box', color = "lightblue")
 
     # Iterating through the fathers list and adding the wife, marriage nodes first.
     # Adding edges between them later and finally adding children as well for nodes
@@ -247,9 +248,9 @@ def tree_create(id:str):
         net.add_node(f"m{i+1}", label = " ", level = 2*i+1, shape = 'dot', size = 3, color = "black")
         
         # Adding wife node and edge only in case id is known.
-        if not pd.isnull(wife_id(father, id)):
-            net.add_node(wife_id(father, id), label = f"{namestr(wife_id(father, id))}\n{birthdate(wife_id(father, id))} -\n{deathdate(wife_id(father, id))}" , level = 2*i+1, shape ='box', color = "pink")
-            net.add_edge(wife_id(father, id), f"m{i+1}", color = "black", size = 2)
+        if not pd.isnull(wife_id(df, father, id)):
+            net.add_node(wife_id(df,father, id), label = f"{namestr(df, wife_id(df, father, id))}\n{birthdate(df, wife_id(df, father, id))} -\n{deathdate(df, wife_id(df, father, id))}" , level = 2*i+1, shape ='box', color = "pink")
+            net.add_edge(wife_id(df, father, id), f"m{i+1}", color = "black", size = 2)
         
         # Adding child collector node and edges between already added nodes. 
         net.add_node(f"c{i+1}", label = " ", level = 2*i+2, shape = 'dot', size = 3, color = "black")
@@ -260,15 +261,15 @@ def tree_create(id:str):
         # next level. Goal is to add him at the end so it will be placed on the left of
         # the children and adding wife in next iteration won't mess up the layout. 
         # The creation has an if-else case to handle missing mother id-s. 
-        if not pd.isnull(wife_id(father, id)):
-            children = df[(df["father_id"] == father) & (df["mother_id"] == wife_id(father, id))]
+        if not pd.isnull(wife_id(df, father, id)):
+            children = df[(df["father_id"] == father) & (df["mother_id"] == wife_id(df, father, id))]
         else:
             children = df[(df["father_id"] == father)]
 
         # Adding all children's nodes except the next father. Edges to the previous child
         # collector node are also added.
         for j in children[~children["id"].isin(fathers)]["id"]:
-            net.add_node(j, label = f"{namestr(j)}\n{birthdate(j)} -\n{deathdate(j)}" , level = 2*i+3, shape ='box', color = nodecolor(j, id))
+            net.add_node(j, label = f"{namestr(df, j)}\n{birthdate(df, j)} -\n{deathdate(df, j)}" , level = 2*i+3, shape ='box', color = nodecolor(df, j, id))
 
             net.add_edge(j, f"c{i+1}", color = "black")
         
@@ -278,7 +279,7 @@ def tree_create(id:str):
         # previous child collector node.
         if len(children[children["id"].isin(fathers)]) != 0:
             f = children[children["id"].isin(fathers)]["id"].tolist()[0]
-            net.add_node(f, label = f"{namestr(f)}\n{birthdate(f)} -\n{deathdate(f)}" , level = 2*i+3, shape ='box', color = "lightblue")
+            net.add_node(f, label = f"{namestr(df, f)}\n{birthdate(df, f)} -\n{deathdate(df, f)}" , level = 2*i+3, shape ='box', color = "lightblue")
             net.add_edge(f, f"c{i+1}", color = "black")
 
 
@@ -304,7 +305,7 @@ while active:
         lastname = input("Please enter the last name of the person you are looking for! ")
 
         try:
-            print(f"{tabulate(lookup(firstname, lastname), headers = 'keys', tablefmt = 'fancy_grid')}\n")
+            print(f"{tabulate(lookup(df, firstname, lastname).fillna('-'), headers = 'keys', tablefmt = 'fancy_grid')}\n")
             nvalid = False
         except ValueError:
             print("Please add a valid name!")
@@ -315,7 +316,7 @@ while active:
     while nvalid2:
 
         try:
-            lookup_earliest(person_id)
+            lookup_earliest(df, person_id)
             nvalid2 = False
         except ValueError:
             person_id = input("Please add a valid id! ")        
@@ -326,7 +327,7 @@ while active:
     while nvalid3:
    
         if decision == "ancestor":
-            print(lookup_earliest(person_id))
+            print(lookup_earliest(df, person_id))
             nvalid3 = False
             
             decision2 = input("Would like to plot the family tree(yes/no)? ")
@@ -335,7 +336,7 @@ while active:
             while nvalid4:
 
                 if decision2 == "yes":
-                    tree_create(person_id)
+                    tree_create(df, person_id)
                     nvalid4 = False
 
                     decision3 = input("Would like to continue with a new person(yes/no)? ")
@@ -372,7 +373,7 @@ while active:
                     decision2 = input("Plese enter yes or no! ")
                     
         elif decision == "tree":
-            tree_create(person_id)
+            tree_create(df, person_id)
             nvalid3 = False
 
             decision5 = input("Would like to continue with a new person(yes/no)? ")
