@@ -3,10 +3,12 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
+import dash_daq as daq
 import visdcc
 import pandas as pd
 import sys
 import random
+from flask import request
 
 # Initializing classes
 class Node():
@@ -134,8 +136,8 @@ class Tree():
         n = [node for node in self.nodes if node.id == node_id][0]
         return n.modify_node_status()
     
-    def modify_rest_tree(self):
-        [node.node_update() for node in self.nodes]
+    def modify_rest_tree(self, level):
+        [node.node_update() if node.level >= level else node for node in self.nodes]
         [edge.edge_update() for edge in self.edges]
         return self.edges, self.nodes
 
@@ -273,7 +275,7 @@ def nodecolor(node:Node):
 
 # creating list of mothers and first node
 
-target = 'I931707KOM'
+target = 'I930675KOM'
 mothers = mother_list(df, target)
 earliest = earliest_id(df, target)
 depth = len(father_list(df, target))
@@ -406,32 +408,15 @@ def node_creation(df, n:Node, n_list:list, depth:int, e_list:list = None, n_id_l
 treedata = node_creation(df, n_list[0], n_list, depth)
 tree = Tree(nodes = treedata[0], edges = treedata[1])
 
-"""
-u = []
-d = []
-for node in tree.nodes:
-    if node.id not in u:
-        u.append(node.id)
-    else:
-        d.append(node)
-
-for node in d:
-    print(node.name)
-    print(node.id),
-    print(node.level)
-
-
-print(len([node.id for node in tree.nodes]))
-
-#print(len(set([node.id for node in tree.nodes])))
-
-#print(father_list(df, 'I931707KOM'))
-
-"""
 
 #creating dash
 app = dash.Dash()
 app.layout = html.Div([
+    daq.StopButton(
+        id='my-stop-button',
+        n_clicks=0
+    ),
+    html.Div(id='stop-button-output'),
     visdcc.Network(
         id = 'net',       
         options = dict(
@@ -440,16 +425,14 @@ app.layout = html.Div([
             layout={
                 'hierarchical': {
                     'enable': True,
-                    'levelSeparation': 150,
+                    'levelSeparation': 100,
                     'nodeSpacing' : 250,
                     'edgeMinimization': True},
-                    'blockShifting': False,
+                    'blockShifting': True,
                     'parentCentralization' : True,
                     'sortMethod' : 'directed'},
             physics= {'enabled': False}),
             
-
-
         data = {'nodes' : [{'id': node.id, 'label': f"{node.name}\n{node.birth} - {node.death}", 'shape' : 'box', 'level': str(node.level), 'color' : nodecolor(node), 'hidden' : node.hidden} for node in tree.nodes if node.hidden == False],
          'edges' :[{'id': edge.id, 'from': edge.fr, 'to': edge.to, 'hidden': edge.hidden} for edge in tree.edges if edge.hidden == False]}
     )
@@ -466,14 +449,23 @@ def my_fun(x, net):
         n = tree.find_node(x['nodes'][0])
 
         if len(x['nodes']) > 0 and n.is_outsider:
-            #n.modify_node_status()
-            tree.modify_selected_node_status(x['nodes'][0])
-            tree.modify_rest_tree()
+            n.modify_node_status()
+            #tree.modify_selected_node_status(x['nodes'][0])
+            tree.modify_rest_tree(n.level)
             data = {'nodes' : [{'id': node.id, 'label': f"{node.name}\n{node.birth} - {node.death}", 'shape' : 'box', 'level': str(node.level), 'color' : nodecolor(node), 'hidden' : node.hidden} for node in tree.nodes],
             'edges' :[{'id': edge.id, 'from': edge.fr, 'to': edge.to, 'hidden': edge.hidden} for edge in tree.edges]}
     
     return data
 
+@app.callback(
+    dash.dependencies.Output('stop-button-output', 'children'),
+    [dash.dependencies.Input('my-stop-button', 'n_clicks')])
+def update_output(n_clicks):
+    return 'The stop button has been clicked {} times.'.format(n_clicks)
+
+
+       
+
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)
