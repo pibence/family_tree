@@ -44,7 +44,7 @@ def lookup(df:pd.DataFrame, firstname:str, lastname:str) -> pd.DataFrame:
     # Creating dictionary of special characters and their pairs in english alphabet.
     #langs = 'ÁáČčĎďÉéĚěÍíŇňÓóŘřŠšŤťÚúŮůÝýŽž'
     langs_eng = 'AaCcDdEeIiNnOoRrSsTtUuYyZz'
-    lang_dic = {'A' : '[A,Á]', 'C' : '[C,Č]', 'D' : '[D, Ď]', 'E' : '[E,É,Ě]', 'I' : '[I,Í]', 'N' : '[N,Ň]', 'O': '[O,Ó]', 'R' : '[R,Ř]' ,'S' : '[S,š]', 'T': '[T,Ť]', 'U' : '[U,Ú,Ů]', 'Y': '[Y,Ý]', 'Z': '[Z,Ž]'}
+    lang_dic = {'A' : '[A,Á]', 'C' : '[C,Č]', 'D' : '[D, Ď]', 'E' : '[E,É,Ě]', 'I' : '[I,Í]', 'N' : '[N,Ň]', 'O': '[O,Ó]', 'R' : '[R,Ř]' ,'S' : '[S,Š]', 'T': '[T,Ť]', 'U' : '[U,Ú,Ů]', 'Y': '[Y,Ý]', 'Z': '[Z,Ž]'}
     lang_dic.update({k.lower() : v.lower() for (k,v) in lang_dic.items()})
 
     #Creating regex compatible first and last names
@@ -219,10 +219,13 @@ def nodecolor(df:pd.DataFrame, act_id:str, orig_id:str) -> str:
 
     if act_id == orig_id:
         return 'orange'
-    elif df[df['id'] == act_id]['sex'].tolist()[0] == 'male':
-        return 'lightblue'
+    elif pd.isnull(df[df['id'] == act_id]['sex'].tolist()[0]):
+        return 'grey'
     else:
-        return 'pink'
+        if df[df['id'] == act_id]['sex'].tolist()[0] == 'male':
+            return 'lightblue'
+        else:
+            return 'pink'
 
 
 def tree_create(df:pd.DataFrame, id:str):
