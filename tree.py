@@ -158,7 +158,7 @@ def father_list(df:pd.DataFrame, id:str, result = None) -> list:
         return father_list(df, father_id, result)
 
 
-def namestr(df:pd.DataFrame, id_:str) -> str:
+def namestr(df:pd.DataFrame, id_:str, sep=" ") -> str:
     """This function creates a string containing the name of the person.
     It selects the name attributes of a given id and pastes together in 
     firstname1, firstname2 (if exists), last name order."""
@@ -171,7 +171,7 @@ def namestr(df:pd.DataFrame, id_:str) -> str:
         if not pd.isna(n):
             st += n
             if n != name_list[-1]:
-                st += " "
+                st += sep
     return st
 
 
@@ -287,9 +287,9 @@ def tree_create(df:pd.DataFrame, id:str):
     path = os.path.join(os.getcwd(), "plots")
     if not os.path.exists(path):
         os.mkdir(path)
-
+    name_to_file = namestr(df, id, sep="_")
     # Showing tree and saving it to plots folder.
-    return net.show(f"{path}/tree_{id}.html")
+    return net.show(f"{path}/tree_{name_to_file}_{id}.html")
 
 # Communicating with the user
 # The idea is to ask questions as inputs and 1) check the inputs first
