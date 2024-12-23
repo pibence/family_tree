@@ -21,7 +21,7 @@ for i in range(1,7):
     
     new = df[(df["sex"] == "male") & (pd.isna(df[f"partner_id{i}"]) == False)][["id", f"partner_id{i}"]]
     new.columns = ["husband_id", "wife_id"]
-    marriages = marriages.append(new)
+    marriages =  pd.concat([marriages, new])
 
 # Creating new df without parnter data
 df = df[['id', 'first_name_1', 'first_name_2', 'last_name', 'birth_date', 'birth_place', 'death_date', 
@@ -37,7 +37,6 @@ def lookup(df:pd.DataFrame, firstname:str, lastname:str) -> pd.DataFrame:
     search purposes."""
     
     # Initializing dataframe
-    people = pd.DataFrame()
     
     # Transforming names into regex to find similar characters as well.
 
@@ -66,35 +65,48 @@ def lookup(df:pd.DataFrame, firstname:str, lastname:str) -> pd.DataFrame:
 
     # Getting list of id-s with matching names based on regex similar chars
     id_list = list(df[(df["first_name_1"].str.contains(firstname_reg, regex = True, na = False)) & (df["last_name"].str.contains(lastname_reg, regex = True, na = False))]["id"])
-    
+
     if len(id_list) == 0:
         raise ValueError("No person in the database with the given name.")
     else:
+        d = {
+            "id": [],
+            "first_name_1": [],
+            "first_name_2": [],
+            "last_name": [],
+            "birth_date":[],
+            "father_name":[],
+            "mother_name" :[],
+        }
         for i in id_list:
             # Iterating through the id-s and collect data about the person
             
-            d = {}
             
-            d["id"] = i
-            d["first_name_1"] = df[(df["id"] == i)].iloc[0, 1]
-            d["first_name_2"] = df[(df["id"] == i)].iloc[0, 2]
-            d["last_name"] = df[(df["id"] == i)].iloc[0, 3]
-            d["birth_date"] = df[(df["id"] == i)].iloc[0, 4]
+            d["id"].append(i)
+            d["first_name_1"].append(df[(df["id"] == i)].iloc[0, 1])
+            d["first_name_2"].append(df[(df["id"] == i)].iloc[0, 2])
+            d["last_name"].append(df[(df["id"] == i)].iloc[0, 3])
+            d["birth_date"].append(df[(df["id"] == i)].iloc[0, 4])
             
             father_id = df[(df["id"] == i)].iloc[0, 8]                     
             if not pd.isnull(father_id):
-                d["father_name"] = df[df["id"] == father_id].iloc[0,1]  + ' ' + df[df["id"] == father_id].iloc[0,3]
+                d["father_name"].append(df[df["id"] == father_id].iloc[0,1]  + ' ' + df[df["id"] == father_id].iloc[0,3])
+            else:
+                d["father_name"].append(None)
             
             mother_id = df[(df["id"] == i)].iloc[0, 9]                     
             if not pd.isnull(mother_id):
-                d["mother_name"] = df[df["id"] == mother_id].iloc[0,1]  + ' ' + df[df["id"] == mother_id].iloc[0,3]
+                d["mother_name"].append(df[df["id"] == mother_id].iloc[0,1]  + ' ' + df[df["id"] == mother_id].iloc[0,3])
+            else:
+                d["mother_name"].append(None)
                 
-                # Appending dictionary to dataframe   
-            people = people.append(d, ignore_index = True)
+                # Appending dictionary to dataframe 
+
+        people = pd.DataFrame(d)
             
         # Returning df with a given order of columns
         return people[["id", "first_name_1", "first_name_2", "last_name", "birth_date", "father_name", "mother_name"]]
-
+   
 
 def lookup_earliest(df:pd.DataFrame, id:str) -> str:
     """This function returns the name and birth year of the earliest ancestor"""
