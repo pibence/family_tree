@@ -1,4 +1,4 @@
-from src.create_tree import FamilyTree
+from .create_tree import FamilyTree
 from tabulate import tabulate
 import os
 
