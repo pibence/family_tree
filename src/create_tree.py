@@ -2,6 +2,10 @@ import pandas as pd
 from pyvis.network import Network
 import os
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class FamilyTree:
     def __init__(self, source_path: str):
@@ -9,13 +13,12 @@ class FamilyTree:
         self.marriages_df = self.get_marriages_dataframe()
         self.plot_path = self.get_plot_path()
 
-    def get_plot_path(self, folder_name="plots"):
+    def get_plot_path(self):
         """
         creating new folder for plots if it hasn't existed yet.
         """
-        path = os.path.join(os.getcwd(), folder_name)
-        if not os.path.exists(path):
-            os.mkdir(path)
+        path = "plots"
+        os.makedirs(path, exist_ok=True)
 
         return path
 
@@ -38,7 +41,7 @@ class FamilyTree:
             ][["id", f"partner_id{i}"]]
             new.columns = ["husband_id", "wife_id"]
             marriages = pd.concat([marriages, new])
-        
+
         return marriages
 
     def remove_partner_data_from_df(self) -> pd.DataFrame:
@@ -418,7 +421,8 @@ class FamilyTree:
             # The creation has an if-else case to handle missing mother id-s.
             if not pd.isnull(wife_id):
                 children = self.source_df[
-                    (self.source_df["father_id"] == father) & (self.source_df["mother_id"] == wife_id)
+                    (self.source_df["father_id"] == father)
+                    & (self.source_df["mother_id"] == wife_id)
                 ]
             else:
                 children = self.source_df[(self.source_df["father_id"] == father)]

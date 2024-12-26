@@ -3,13 +3,11 @@ from tabulate import tabulate
 import os
 
 
-
 if __name__ == "__main__":
-
-# Communicating with the user
-# The idea is to ask questions as inputs and 1) check the inputs first
-# 2a) execute the desired step 2b) ask for new input if the first was
-# not correct.
+    # Communicating with the user
+    # The idea is to ask questions as inputs and 1) check the inputs first
+    # 2a) execute the desired step 2b) ask for new input if the first was
+    # not correct.
 
     source_path = os.path.join("data", "final_cleaned.csv")
     family_tree_factory = FamilyTree(source_path=source_path)
