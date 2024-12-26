@@ -24,5 +24,12 @@ The code uses the pyvis package that returns the image as a html file saved on t
 5. After plotting a person's tree the user can decide whether he/she'd like to continue with a new search or terminate the code.
 In case inapropriate input is typed the code asks the user to enter it correctly until it happens. The code can be terminated at any time by the *ctrl + c* combination.
 
+## Run in docker container with mounted volumes
+To run as a docker container, you need to run the following command:
+```
+docker run -v $(pwd)/output:/app/plots -it --platform linux/amd64 family-tree-amd64
+```
+where the current directory's `output` subdirectory will store the generated html files.
+
 ## Copyright information
 The data collection was done by the local curch and published in the above mentioned html formats. My contribution is only the plot visualizer.
