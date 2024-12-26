@@ -8,7 +8,6 @@ class FamilyTree:
         self.source_df = pd.read_csv(source_path, sep=";", dtype="string")
         self.marriages_df = self.get_marriages_dataframe()
         self.plot_path = self.get_plot_path()
-        print(self.source_df.head())
 
     def get_plot_path(self, folder_name="plots"):
         """
