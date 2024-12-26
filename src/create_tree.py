@@ -1,4 +1,6 @@
 import pandas as pd
+import webbrowser
+from pathlib import Path
 from pyvis.network import Network
 import os
 
@@ -460,4 +462,4 @@ class FamilyTree:
         generated_html_path = os.path.join(
             self.plot_path, f"tree_{name_to_file}_{id}.html"
         )
-        return net.show(generated_html_path)
+        net.save_graph(generated_html_path)
