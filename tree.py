@@ -187,7 +187,7 @@ def namestr(df:pd.DataFrame, id_:str, sep=" ") -> str:
     return st
 
 
-def wife_id(df:pd.DataFrame, husband_id:str, orig_id:str) -> str:
+def get_wife_id(df:pd.DataFrame, husband_id:str, orig_id:str) -> str:
     "This function returns the wife id to a husband id."
     #orig_id: the id of the person whose tree is being built.
     
@@ -200,7 +200,7 @@ def wife_id(df:pd.DataFrame, husband_id:str, orig_id:str) -> str:
         return wives[wives["wife_id"].isin(mothers)]["wife_id"].tolist()[0]
 
 
-def birthdate(df:pd.DataFrame, id:str)->str:
+def get_birth_date(df:pd.DataFrame, id:str)->str:
     """This function returns the date of birth of a person by id.
     If there is no info, it returns an empthy string."""
 
@@ -212,7 +212,7 @@ def birthdate(df:pd.DataFrame, id:str)->str:
         return bd
 
 
-def deathdate(df:pd.DataFrame, id:str) -> str:
+def get_death_date(df:pd.DataFrame, id:str) -> str:
     """This function returns the date of death of a person by id.
     If there is no info, it returns an empthy string."""
     
@@ -223,19 +223,64 @@ def deathdate(df:pd.DataFrame, id:str) -> str:
     else:
         return dd 
 
+def get_birth_place(df:pd.DataFrame, id:str) -> str:
+    """
+    gets the birth place for a given id
+    """
+
+    birth_place = df[df["id"] == id]["birth_place"].tolist()[0]
+
+    if pd.isnull(birth_place):
+        return "" 
+    else:
+        return birth_place 
+
+def get_death_place(df:pd.DataFrame, id:str) -> str:
+    """
+    gets the birth place for a given id
+    """
+
+    death_place = df[df["id"] == id]["death_place"].tolist()[0]
+
+    if pd.isnull(death_place):
+        return "" 
+    else:
+        return death_place 
+
 
 def nodecolor(df:pd.DataFrame, act_id:str, orig_id:str) -> str:
     """This function returns a color based on the person's details.
     Pink, if female, blue, if male, and orange if the person is the same
     whose tree is being built for better visualization."""
 
+    gender = df[df['id'] == act_id]['sex'].tolist()[0]
     if act_id == orig_id:
         return 'orange'
-    elif df[df['id'] == act_id]['sex'].tolist()[0] == 'male':
+    elif pd.isna(gender):
+        return 'grey'
+    elif gender == "male":
         return 'lightblue'
     else:
         return 'pink'
+    
+def generate_node_label(df:pd.DataFrame, id:str):
+    """
+    Generates a node label for each id including the name, the birth and death date and the 
+    birth and death places.
+    """
+    birth_date = get_birth_date(df, id)
+    death_date = get_death_date(df, id)
+    birth_place = get_birth_place(df, id)
+    death_place = get_death_place(df, id)
 
+    label = f"{namestr(df, id)}\n{birth_date}"
+    if birth_place:
+        label += f"\n({birth_place})"
+    label += f" -\n{death_date}"
+    if death_place:
+        label += f"\n({death_place})"
+    
+    return label
 
 def tree_create(df:pd.DataFrame, id:str):
     """"This function takes the id of a person and returns the whole family tree on 
@@ -250,7 +295,7 @@ def tree_create(df:pd.DataFrame, id:str):
 
     # Initializing network object and adding earliest ancestor
     net = Network(layout = 'hieararchical', height = 1000, width = 2000)
-    net.add_node(eid, label = f"{namestr(df, eid)}\n{birthdate(df,eid)} -\n{deathdate(df,eid)}" , level = 1, shape ='box', color = "lightblue")
+    net.add_node(eid, label = generate_node_label(df, eid) , level = 1, shape ='box', color = "lightblue")
 
     # Iterating through the fathers list and adding the wife, marriage nodes first.
     # Adding edges between them later and finally adding children as well for nodes
@@ -260,9 +305,10 @@ def tree_create(df:pd.DataFrame, id:str):
         net.add_node(f"m{i+1}", label = " ", level = 2*i+1, shape = 'dot', size = 3, color = "black")
         
         # Adding wife node and edge only in case id is known.
-        if not pd.isnull(wife_id(df, father, id)):
-            net.add_node(wife_id(df,father, id), label = f"{namestr(df, wife_id(df, father, id))}\n{birthdate(df, wife_id(df, father, id))} -\n{deathdate(df, wife_id(df, father, id))}" , level = 2*i+1, shape ='box', color = "pink")
-            net.add_edge(wife_id(df, father, id), f"m{i+1}", color = "black", size = 2)
+        wife_id = get_wife_id(df,father, id)
+        if not pd.isnull(wife_id):
+            net.add_node(wife_id, label = generate_node_label(df, wife_id) , level = 2*i+1, shape ='box', color = "pink")
+            net.add_edge(wife_id, f"m{i+1}", color = "black", size = 2)
         
         # Adding child collector node and edges between already added nodes. 
         net.add_node(f"c{i+1}", label = " ", level = 2*i+2, shape = 'dot', size = 3, color = "black")
@@ -273,17 +319,17 @@ def tree_create(df:pd.DataFrame, id:str):
         # next level. Goal is to add him at the end so it will be placed on the left of
         # the children and adding wife in next iteration won't mess up the layout. 
         # The creation has an if-else case to handle missing mother id-s. 
-        if not pd.isnull(wife_id(df, father, id)):
-            children = df[(df["father_id"] == father) & (df["mother_id"] == wife_id(df, father, id))]
+        if not pd.isnull(wife_id):
+            children = df[(df["father_id"] == father) & (df["mother_id"] == wife_id)]
         else:
             children = df[(df["father_id"] == father)]
 
         # Adding all children's nodes except the next father. Edges to the previous child
         # collector node are also added.
-        for j in children[~children["id"].isin(fathers)]["id"]:
-            net.add_node(j, label = f"{namestr(df, j)}\n{birthdate(df, j)} -\n{deathdate(df, j)}" , level = 2*i+3, shape ='box', color = nodecolor(df, j, id))
+        for child_id in children[~children["id"].isin(fathers)]["id"]:
+            net.add_node(child_id, label = generate_node_label(df, child_id) , level = 2*i+3, shape ='box', color = nodecolor(df, child_id, id))
 
-            net.add_edge(j, f"c{i+1}", color = "black")
+            net.add_edge(child_id, f"c{i+1}", color = "black")
         
         # Adding next iteration's father to the left of his siblings in case
         # the loop is not in the final iretarion. In the final iteration the
@@ -291,7 +337,7 @@ def tree_create(df:pd.DataFrame, id:str):
         # previous child collector node.
         if len(children[children["id"].isin(fathers)]) != 0:
             f = children[children["id"].isin(fathers)]["id"].tolist()[0]
-            net.add_node(f, label = f"{namestr(df, f)}\n{birthdate(df, f)} -\n{deathdate(df, f)}" , level = 2*i+3, shape ='box', color = "lightblue")
+            net.add_node(f, label = generate_node_label(df, f) , level = 2*i+3, shape ='box', color = "lightblue")
             net.add_edge(f, f"c{i+1}", color = "black")
 
 
